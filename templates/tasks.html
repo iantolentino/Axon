@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Tasks & Reminders</h1>
+    <button id="addTaskBtn" class="btn-primary">Add Task</button>
+</div>
+
+<div class="tasks-container">
+    <div class="task-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="pending">Pending</button>
+        <button class="filter-btn" data-filter="completed">Completed</button>
+    </div>
+
+    <div id="tasksList" class="tasks-list">
+        {% for task in tasks %}
+        <div class="task-card {% if task.completed %}completed{% endif %}" data-status="{% if task.completed %}completed{% else %}pending{% endif %}">
+            <div class="task-header">
+                <input type="checkbox" {% if task.completed %}checked{% endif %} 
+                       onchange="toggleTaskCompletion({{ task.id }})" class="task-checkbox">
+                <h3 class="task-title">{{ task.title }}</h3>
+                <div class="task-actions">
+                    <button onclick="editTask({{ task.id }})" class="btn-icon">✏️</button>
+                    <button onclick="deleteTask({{ task.id }})" class="btn-icon">🗑️</button>
+                </div>
+            </div>
+            {% if task.description %}
+            <p class="task-description">{{ task.description }}</p>
+            {% endif %}
+            {% if task.due_date %}
+            <div class="task-meta">
+                <span class="due-date">Due: {{ task.due_date.strftime('%Y-%m-%d %H:%M') }}</span>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No tasks yet</h3>
+            <p>Add your first task to get started!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Add New Task</h2>
+        <form id="taskForm">
+            <input type="hidden" id="taskId">
+            <div class="form-group">
+                <label for="taskTitle">Title *</label>
+                <input type="text" id="taskTitle" required>
+            </div>
+            <div class="form-group">
+                <label for="taskDescription">Description</label>
+                <textarea id="taskDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="taskDueDate">Due Date & Time</label>
+                <input type="datetime-local" id="taskDueDate">
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Save Task</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+{% endblock %}

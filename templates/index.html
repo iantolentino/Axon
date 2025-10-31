@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Today's Recap</h1>
+        <p>{{ date.today().strftime('%A, %B %d, %Y') }}</p>
+    </header>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Completed Today</h3>
+            <div class="stat-number">{{ completed_today }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Pending Tasks</h3>
+            <div class="stat-number">{{ today_tasks|length }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Productivity</h3>
+            <div class="stat-number">
+                {% if completed_today + today_tasks|length > 0 %}
+                    {{ (completed_today / (completed_today + today_tasks|length) * 100)|int }}%
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <section class="dashboard-section">
+            <h2>Today's Tasks</h2>
+            <div class="task-list">
+                {% for task in today_tasks %}
+                <div class="task-item {% if task.completed %}completed{% endif %}">
+                    <input type="checkbox" {% if task.completed %}checked{% endif %} 
+                           onchange="toggleTask({{ task.id }})">
+                    <span class="task-title">{{ task.title }}</span>
+                    {% if task.due_date %}
+                    <span class="task-due">{{ task.due_date.strftime('%H:%M') }}</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="empty-state">No tasks for today! 🎉</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Recent Notes</h2>
+            <div class="notes-preview">
+                {% for note in recent_notes %}
+                <div class="note-preview">
+                    <p>{{ note.content[:100] }}{% if note.content|length > 100 %}...{% endif %}</p>
+                    <small>{{ note.updated_at.strftime('%H:%M') }}</small>
+                </div>
+                {% else %}
+                <p class="empty-state">No notes yet 📝</p>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('notes') }}" class="btn-secondary">View All Notes</a>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+{% endblock %}
