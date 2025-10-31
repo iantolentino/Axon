@@ -1,4 +1,4 @@
-2from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
 from datetime import datetime, date
@@ -60,10 +60,14 @@ def index():
     # Get recent notes
     recent_notes = Note.query.order_by(Note.updated_at.desc()).limit(5).all()
     
+    # Get current date for display
+    current_date = datetime.now()
+    
     return render_template('index.html', 
                          today_tasks=today_tasks,
                          completed_today=completed_today,
-                         recent_notes=recent_notes)
+                         recent_notes=recent_notes,
+                         current_date=current_date)  # Pass current date to template
 
 @app.route('/tasks')
 def tasks():
