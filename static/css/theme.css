@@ -1,0 +1,17 @@
+/* Theme transition smoothness */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Dark theme specific adjustments */
+[data-theme="dark"] .task-card,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .dashboard-section {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .task-card,
+[data-theme="light"] .stat-card,
+[data-theme="light"] .dashboard-section {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
