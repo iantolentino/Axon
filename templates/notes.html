@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Quick Notes & Ideas</h1>
+    <button id="addNoteBtn" class="btn-primary">Add Note</button>
+</div>
+
+<div class="notes-container">
+    <div class="notes-grid">
+        {% for note in notes %}
+        <div class="note-card">
+            <div class="note-content">
+                {{ note.content|replace('\n', '<br>')|safe }}
+            </div>
+            {% if note.tags %}
+            <div class="note-tags">
+                {% for tag in note.tags.split(',') %}
+                <span class="tag">#{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="note-meta">
+                <small>Last updated: {{ note.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                <div class="note-actions">
+                    <button onclick="editNote({{ note.id }})" class="btn-icon">✏️</button>
+                    <button onclick="deleteNote({{ note.id }})" class="btn-icon">🗑️</button>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No notes yet</h3>
+            <p>Capture your first idea!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div id="noteModal" class="modal">
+    <div class="modal-content">
+        <h2 id="noteModalTitle">Add New Note</h2>
+        <form id="noteForm">
+            <input type="hidden" id="noteId">
+            <div class="form-group">
+                <label for="noteContent">Content *</label>
+                <textarea id="noteContent" rows="6" required placeholder="Write your note here..."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="noteTags">Tags (comma separated)</label>
+                <input type="text" id="noteTags" placeholder="work, ideas, personal">
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="closeModal('noteModal')" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Save Note</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/notes.js') }}"></script>
+{% endblock %}

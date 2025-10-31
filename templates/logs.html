@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Daily Logs</h1>
+    <button id="addLogBtn" class="btn-primary">Add Today's Log</button>
+</div>
+
+<div class="logs-container">
+    <div class="logs-list">
+        {% for log in logs %}
+        <div class="log-card">
+            <div class="log-header">
+                <h3>{{ log.date.strftime('%A, %B %d, %Y') }}</h3>
+            </div>
+            <div class="log-content">
+                {% if log.accomplishments %}
+                <div class="log-section">
+                    <h4>✅ Accomplishments</h4>
+                    <p>{{ log.accomplishments|replace('\n', '<br>')|safe }}</p>
+                </div>
+                {% endif %}
+                {% if log.missed_items %}
+                <div class="log-section">
+                    <h4>❌ Missed</h4>
+                    <p>{{ log.missed_items|replace('\n', '<br>')|safe }}</p>
+                </div>
+                {% endif %}
+                {% if log.tomorrow_plan %}
+                <div class="log-section">
+                    <h4>📅 Tomorrow's Plan</h4>
+                    <p>{{ log.tomorrow_plan|replace('\n', '<br>')|safe }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No logs yet</h3>
+            <p>Start tracking your daily progress!</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
