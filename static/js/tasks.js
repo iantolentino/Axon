@@ -42,7 +42,7 @@ document.getElementById('taskForm')?.addEventListener('submit', async (e) => {
         }
         
         closeModal('taskModal');
-        location.reload(); // Refresh to show updated list
+        location.reload();
     } catch (error) {
         console.error('Error saving task:', error);
         alert('Error saving task. Please try again.');
@@ -52,12 +52,15 @@ document.getElementById('taskForm')?.addEventListener('submit', async (e) => {
 // Task Actions
 async function toggleTaskCompletion(taskId) {
     try {
+        const taskElement = document.querySelector(`[onchange="toggleTaskCompletion(${taskId})"]`);
+        const isCompleted = taskElement.checked;
+        
         const response = await fetch(`/api/tasks/${taskId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ completed: true })
+            body: JSON.stringify({ completed: isCompleted })
         });
         
         if (response.ok) {
@@ -82,16 +85,22 @@ async function deleteTask(taskId) {
 }
 
 function editTask(taskId) {
-    // This would fetch task details and populate the form
-    // For now, we'll just redirect to a dedicated edit page or use the same modal
-    console.log('Edit task:', taskId);
-    // Implementation for editing would go here
+    // For now, reload and we'll implement proper editing later
+    alert('Edit functionality coming soon!');
+}
+
+// Modal functions
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('taskModal').style.display = 'none';
 }
 
 // Task Filtering
 document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        // Update active filter
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         
