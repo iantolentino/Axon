@@ -1,23 +1,24 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from config import Config
 from datetime import datetime, date
-import json
+import os
 
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///second_brain.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'your-secret-key-here'
+
 db = SQLAlchemy(app)
 
-# Database Models
+# Database Models - Fixed with all required fields
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
     due_date = db.Column(db.DateTime)
     completed = db.Column(db.Boolean, default=False)
-    reminder_sent = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # FIXED: Added back
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -51,7 +52,7 @@ def index():
         Task.completed == False
     ).all()
     
-    # Get completed tasks today
+    # Get completed tasks today - FIXED: uses updated_at field
     completed_today = Task.query.filter(
         db.func.date(Task.updated_at) == date.today(),
         Task.completed == True
@@ -67,7 +68,7 @@ def index():
                          today_tasks=today_tasks,
                          completed_today=completed_today,
                          recent_notes=recent_notes,
-                         current_date=current_date)  # Pass current date to template
+                         current_date=current_date)
 
 @app.route('/tasks')
 def tasks():
@@ -90,8 +91,7 @@ def create_task():
     data = request.get_json()
     task = Task(
         title=data['title'],
-        description=data.get('description', ''),
-        due_date=datetime.fromisoformat(data['due_date']) if data.get('due_date') else None
+        description=data.get('description', '')
     )
     db.session.add(task)
     db.session.commit()
