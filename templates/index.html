@@ -7,6 +7,35 @@
         <p>{{ current_date.strftime('%A, %B %d, %Y') }}</p>
     </header>
 
+    <!-- Phase 3: Smart Daily Recap -->
+    <div class="recap-card">
+        <div class="recap-header">
+            <h2>🧠 Daily Intelligence</h2>
+            <button onclick="refreshRecap()" class="btn-icon">🔄</button>
+        </div>
+        <div class="recap-content">
+            <p>{{ daily_recap.summary }}</p>
+            <div class="recap-metrics">
+                <div class="metric">
+                    <span class="metric-value">{{ daily_recap.completed_count }}</span>
+                    <span class="metric-label">Completed</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ daily_recap.overdue_count }}</span>
+                    <span class="metric-label">Overdue</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ daily_recap.notes_count }}</span>
+                    <span class="metric-label">New Ideas</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-value">{{ daily_recap.productivity_score }}%</span>
+                    <span class="metric-label">Productivity</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="stats-grid">
         <div class="stat-card">
             <h3>Completed Today</h3>
@@ -35,7 +64,7 @@
                 {% for task in today_tasks %}
                 <div class="task-item {% if task.completed %}completed{% endif %}">
                     <input type="checkbox" {% if task.completed %}checked{% endif %} 
-                           onchange="toggleTask({{ task.id }})">
+                           onchange="toggleTaskCompletion({{ task.id }})">
                     <span class="task-title">{{ task.title }}</span>
                     {% if task.due_date %}
                     <span class="task-due">{{ task.due_date.strftime('%H:%M') }}</span>
@@ -45,6 +74,7 @@
                 <p class="empty-state">No tasks for today! 🎉</p>
                 {% endfor %}
             </div>
+            <a href="{{ url_for('tasks') }}" class="btn-secondary">View All Tasks</a>
         </section>
 
         <section class="dashboard-section">
@@ -63,4 +93,44 @@
         </section>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshRecap() {
+    fetch('/api/daily-recap')
+        .then(response => response.json())
+        .then(recap => {
+            // Update recap content dynamically
+            document.querySelector('.recap-content p').textContent = recap.summary;
+            const metrics = document.querySelectorAll('.metric-value');
+            metrics[0].textContent = recap.completed_count;
+            metrics[1].textContent = recap.overdue_count;
+            metrics[2].textContent = recap.notes_count;
+            metrics[3].textContent = recap.productivity_score + '%';
+        });
+}
+
+// Task completion function
+async function toggleTaskCompletion(taskId) {
+    try {
+        const taskElement = document.querySelector(`[onchange="toggleTaskCompletion(${taskId})"]`);
+        const isCompleted = taskElement.checked;
+        
+        const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ completed: isCompleted })
+        });
+        
+        if (response.ok) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Error updating task:', error);
+    }
+}
+</script>
 {% endblock %}

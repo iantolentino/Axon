@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🔍 Search Everything</h1>
+</div>
+
+<div class="search-container">
+    <div class="search-bar">
+        <form action="{{ url_for('search') }}" method="get" onsubmit="handleSearch(event)">
+            <input 
+                type="text" 
+                name="q" 
+                value="{{ query }}" 
+                placeholder="Search across tasks, notes, habits..." 
+                id="searchInput"
+                autocomplete="off"
+            >
+        </form>
+    </div>
+</div>
+
+{% if query %}
+<div class="search-results">
+    <h2>Search Results for "{{ query }}"</h2>
+    
+    <div class="results-stats">
+        <div class="stat-badge">
+            <span class="stat-number">{{ results.tasks|length }}</span>
+            <span class="stat-label">Tasks</span>
+        </div>
+        <div class="stat-badge">
+            <span class="stat-number">{{ results.notes|length }}</span>
+            <span class="stat-label">Notes</span>
+        </div>
+        <div class="stat-badge">
+            <span class="stat-number">{{ results.habits|length }}</span>
+            <span class="stat-label">Habits</span>
+        </div>
+    </div>
+
+    <!-- Tasks Results -->
+    {% if results.tasks %}
+    <section class="results-section">
+        <h3>📋 Tasks</h3>
+        <div class="results-grid">
+            {% for task in results.tasks %}
+            <div class="result-card task-result">
+                <div class="result-header">
+                    <h4>{{ task.title }}</h4>
+                    <span class="result-badge {% if task.completed %}completed{% else %}pending{% endif %}">
+                        {{ '✅ Completed' if task.completed else '⏳ Pending' }}
+                    </span>
+                </div>
+                {% if task.description %}
+                <p class="result-content">{{ task.description }}</p>
+                {% endif %}
+                <div class="result-actions">
+                    <a href="{{ url_for('tasks') }}" class="btn-secondary">View Task</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Notes Results -->
+    {% if results.notes %}
+    <section class="results-section">
+        <h3>📝 Notes</h3>
+        <div class="results-grid">
+            {% for note in results.notes %}
+            <div class="result-card note-result">
+                <div class="result-header">
+                    <h4>Note</h4>
+                    {% if note.tags %}
+                    <span class="tag">{{ note.tags }}</span>
+                    {% endif %}
+                </div>
+                <p class="result-content">{{ note.content }}</p>
+                <div class="result-actions">
+                    <a href="{{ url_for('notes') }}" class="btn-secondary">View Note</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Habits Results -->
+    {% if results.habits %}
+    <section class="results-section">
+        <h3>🔥 Habits</h3>
+        <div class="results-grid">
+            {% for habit in results.habits %}
+            <div class="result-card habit-result">
+                <div class="result-header">
+                    <h4>{{ habit.name }}</h4>
+                    <span class="result-badge streak">{{ habit.streak }} day streak</span>
+                </div>
+                <p class="result-content">{{ habit.description }}</p>
+                <div class="result-actions">
+                    <a href="{{ url_for('habits') }}" class="btn-secondary">View Habit</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if not results.tasks and not results.notes and not results.habits %}
+    <div class="empty-state">
+        <h3>No results found</h3>
+        <p>Try searching with different keywords or browse through your content manually.</p>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>Ready to search?</h3>
+    <p>Enter a keyword above to search across all your tasks, notes, and habits.</p>
+    <div class="search-tips">
+        <h4>💡 Search Tips:</h4>
+        <ul>
+            <li>Search by task titles or descriptions</li>
+            <li>Find notes by content or tags</li>
+            <li>Look up habit names or descriptions</li>
+            <li>Use specific keywords for better results</li>
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function handleSearch(event) {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput.value.trim()) {
+        event.preventDefault();
+        return false;
+    }
+    return true;
+}
+
+// Focus search input on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.focus();
+        
+        // Add real-time search if needed
+        searchInput.addEventListener('input', function() {
+            // Could implement real-time search here with fetch API
+        });
+    }
+});
+</script>
+{% endblock %}

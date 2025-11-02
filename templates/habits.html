@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Habit Tracker</h1>
+    <button onclick="initializeHabits()" class="btn-primary">Setup Default Habits</button>
+</div>
+
+<div class="habits-container">
+    <div class="habits-grid" id="habitsList">
+        {% for habit in habits %}
+        <div class="habit-card" data-habit-id="{{ habit.id }}">
+            <div class="habit-info">
+                <h3>{{ habit.name }}</h3>
+                <p>{{ habit.description }}</p>
+                <div class="habit-streak">
+                    🔥 {{ habit.streak_count }} day streak
+                </div>
+                {% if habit.last_completed %}
+                <div class="habit-last-completed">
+                    Last completed: {{ habit.last_completed.strftime('%Y-%m-%d') }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="habit-actions">
+                <button onclick="openHabitModal({{ habit.id }})" class="btn-primary">
+                    {% if habit.last_completed and habit.last_completed == date %}✅ Completed{% else %}Mark Complete{% endif %}
+                </button>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <h3>No habits yet</h3>
+            <p>Set up your habits to start tracking progress!</p>
+            <button onclick="initializeHabits()" class="btn-primary">Create Default Habits</button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Habit Actions Modal -->
+<div id="habitModal" class="modal">
+    <div class="modal-content">
+        <h2>Complete Habit</h2>
+        <p id="habitModalText">Did you complete this habit today?</p>
+        <div class="form-actions">
+            <button onclick="completeHabit()" class="btn-primary">✅ Complete</button>
+            <button onclick="skipHabit()" class="btn-secondary">⏭️ Skip</button>
+            <button onclick="closeHabitModal()" class="btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/habits.js') }}"></script>
+{% endblock %}

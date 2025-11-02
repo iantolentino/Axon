@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📤 Export & Backup</h1>
+</div>
+
+<div class="export-section">
+    <h2>Export Your Data</h2>
+    <p>Download your Second Brain data for backup or use in other applications.</p>
+    
+    <div class="export-options">
+        <div class="export-option">
+            <div class="export-icon">📊</div>
+            <h3>CSV Export</h3>
+            <p>Export all your data as CSV files for spreadsheets and data analysis.</p>
+            <a href="{{ url_for('export_csv') }}" class="btn-primary">Download CSV</a>
+        </div>
+        
+        <div class="export-option">
+            <div class="export-icon">🔤</div>
+            <h3>JSON Export</h3>
+            <p>Export as JSON for developers or to import into other applications.</p>
+            <a href="{{ url_for('export_json') }}" class="btn-primary">Download JSON</a>
+        </div>
+    </div>
+</div>
+
+<div class="export-section">
+    <h2>Data Overview</h2>
+    
+    <div class="data-stats">
+        <div class="data-stat">
+            <span class="data-number">{{ tasks_count }}</span>
+            <span class="data-label">Total Tasks</span>
+        </div>
+        <div class="data-stat">
+            <span class="data-number">{{ notes_count }}</span>
+            <span class="data-label">Total Notes</span>
+        </div>
+        <div class="data-stat">
+            <span class="data-number">{{ habits_count }}</span>
+            <span class="data-label">Habits Tracked</span>
+        </div>
+        <div class="data-stat">
+            <span class="data-number">{{ completed_tasks_count }}</span>
+            <span class="data-label">Completed Tasks</span>
+        </div>
+    </div>
+</div>
+
+<div class="export-section">
+    <h2>Backup Recommendations</h2>
+    <div class="backup-tips">
+        <div class="tip">
+            <h4>🔄 Regular Backups</h4>
+            <p>Export your data weekly to ensure you never lose your progress.</p>
+        </div>
+        <div class="tip">
+            <h4>☁️ Cloud Storage</h4>
+            <p>Store your exports in cloud services like Google Drive or Dropbox.</p>
+        </div>
+        <div class="tip">
+            <h4>📁 Multiple Copies</h4>
+            <p>Keep backups in different locations for maximum safety.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add any export-related JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Export page loaded');
+});
+</script>
+{% endblock %}

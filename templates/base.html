@@ -13,10 +13,13 @@
             <h1>🧠 Second Brain</h1>
         </div>
         <div class="nav-links">
-            <a href="{{ url_for('index') }}" class="nav-link">Dashboard</a>
-            <a href="{{ url_for('tasks') }}" class="nav-link">Tasks</a>
-            <a href="{{ url_for('notes') }}" class="nav-link">Notes</a>
-            <a href="{{ url_for('logs') }}" class="nav-link">Logs</a>
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('tasks') }}" class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}">Tasks</a>
+            <a href="{{ url_for('notes') }}" class="nav-link {% if request.endpoint == 'notes' %}active{% endif %}">Notes</a>
+            <a href="{{ url_for('habits') }}" class="nav-link {% if request.endpoint == 'habits' %}active{% endif %}">Habits</a>
+            <a href="{{ url_for('logs') }}" class="nav-link {% if request.endpoint == 'logs' %}active{% endif %}">Logs</a>
+            <a href="{{ url_for('search') }}" class="nav-link {% if request.endpoint == 'search' %}active{% endif %}">Search</a>
+            <a href="{{ url_for('export_data') }}" class="nav-link {% if request.endpoint == 'export_data' %}active{% endif %}">Export</a>
         </div>
         <button id="themeToggle" class="theme-toggle">🌓</button>
     </nav>
@@ -29,7 +32,6 @@
     <button id="fab" class="fab">+</button>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
