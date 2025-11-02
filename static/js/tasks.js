@@ -84,9 +84,32 @@ async function deleteTask(taskId) {
     }
 }
 
-function editTask(taskId) {
-    // For now, reload and we'll implement proper editing later
-    alert('Edit functionality coming soon!');
+// FIXED: Proper edit task functionality
+async function editTask(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        const task = await response.json();
+        
+        currentEditingTask = taskId;
+        document.getElementById('modalTitle').textContent = 'Edit Task';
+        document.getElementById('taskId').value = task.id;
+        document.getElementById('taskTitle').value = task.title;
+        document.getElementById('taskDescription').value = task.description || '';
+        
+        // Format due date for datetime-local input
+        if (task.due_date) {
+            const dueDate = new Date(task.due_date);
+            const formattedDate = dueDate.toISOString().slice(0, 16);
+            document.getElementById('taskDueDate').value = formattedDate;
+        } else {
+            document.getElementById('taskDueDate').value = '';
+        }
+        
+        openModal('taskModal');
+    } catch (error) {
+        console.error('Error loading task:', error);
+        alert('Error loading task for editing');
+    }
 }
 
 // Modal functions
@@ -96,7 +119,15 @@ function openModal(modalId) {
 
 function closeModal() {
     document.getElementById('taskModal').style.display = 'none';
+    currentEditingTask = null;
 }
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        closeModal();
+    }
+});
 
 // Task Filtering
 document.querySelectorAll('.filter-btn').forEach(btn => {
