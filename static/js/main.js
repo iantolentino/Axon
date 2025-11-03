@@ -37,11 +37,11 @@ class ThemeManager {
     }
 
     updateButtonIcon() {
-        const icon = this.currentTheme === 'dark' ? '🌙' : '☀️';
+        const icon = this.currentTheme === '' ? '' : '';
         this.themeToggle.innerHTML = `
             <div class="theme-toggle-inner">
                 <span class="theme-icon">${icon}</span>
-                <span class="theme-label">${this.currentTheme === 'dark' ? 'Dark' : 'Light'}</span>
+                <span class="theme-label">${this.currentTheme === '' ? '' : ''}</span>
             </div>
         `;
     }

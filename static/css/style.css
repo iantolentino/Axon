@@ -6,19 +6,19 @@
 }
 
 :root {
-    /* Unified Color Palette */
-    --primary-bg: #ffffff;
-    --secondary-bg: #f8fafc;
-    --tertiary-bg: #f1f5f9;
-    --text-primary: #1e293b;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
-    --accent-primary: #3b82f6;
-    --accent-secondary: #6366f1;
+    /* New Color Palette - Light Mode */
+    --primary-bg: #9ECFD4;
+    --secondary-bg: #70B2B2;
+    --tertiary-bg: #E5E9C5;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --accent-primary: #016B61;
+    --accent-secondary: #70B2B2;
     --accent-success: #10b981;
     --accent-warning: #f59e0b;
     --accent-error: #ef4444;
-    --border-color: #e2e8f0;
+    --border-color: #E5E9C5;
     --border-light: #f1f5f9;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -28,18 +28,19 @@
 }
 
 [data-theme="dark"] {
-    --primary-bg: #0f172a;
-    --secondary-bg: #1e293b;
-    --tertiary-bg: #334155;
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    --accent-primary: #60a5fa;
-    --accent-secondary: #818cf8;
+    /* New Color Palette - Dark Mode */
+    --primary-bg: #016B61;
+    --secondary-bg: #70B2B2;
+    --tertiary-bg: #E5E9C5;
+    --text-primary: #000000;  
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --accent-primary: #9ECFD4;
+    --accent-secondary: #70B2B2;
     --accent-success: #34d399;
     --accent-warning: #fbbf24;
     --accent-error: #f87171;
-    --border-color: #334155;
+    --border-color: #E5E9C5;
     --border-light: #475569;
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -113,19 +114,67 @@ body {
     border-radius: 1px;
 }
 
+/* Theme Toggle Switch */
 .theme-toggle {
+    position: relative;
+    width: 60px;
+    height: 30px;
     background: var(--tertiary-bg);
-    border: 1px solid var(--border-color);
-    font-size: 1.2rem;
+    border: 2px solid var(--border-color);
+    border-radius: 15px;
     cursor: pointer;
-    padding: 0.5rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+}
+
+.theme-toggle::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: var(--accent-primary);
     border-radius: 50%;
-    transition: all 0.2s;
-    color: var(--text-primary);
+    transition: all 0.3s ease;
+    left: 3px;
+}
+
+[data-theme="dark"] .theme-toggle::before {
+    transform: translateX(30px);
+    background: var(--accent-primary);
+}
+
+.theme-toggle-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.theme-icon {
+    font-size: 0.8rem;
+    transition: opacity 0.3s ease;
+}
+
+.theme-icon:first-child {
+    opacity: 1;
+}
+
+[data-theme="dark"] .theme-icon:first-child {
+    opacity: 0.5;
+}
+
+.theme-icon:last-child {
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .theme-icon:last-child {
+    opacity: 1;
 }
 
 .theme-toggle:hover {
-    background-color: var(--border-color);
+    border-color: var(--accent-primary);
     transform: scale(1.05);
 }
 
@@ -410,7 +459,7 @@ body {
 .form-group select:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
 }
 
 .form-actions {
@@ -770,6 +819,7 @@ body {
         align-items: flex-start;
     }
 }
+
 /* Search Results Styles */
 .search-results {
     space-y: 2rem;
@@ -1206,41 +1256,6 @@ body {
     }
 }
 
-/* Enhanced Theme Toggle */
-.theme-toggle {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    border: none;
-    padding: 0.75rem 1rem;
-    border-radius: var(--radius);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    color: white;
-    font-weight: 500;
-    min-width: 80px;
-    box-shadow: var(--shadow);
-}
-
-.theme-toggle:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.theme-toggle-inner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.theme-icon {
-    font-size: 1.1rem;
-}
-
-.theme-label {
-    font-size: 0.875rem;
-    font-weight: 500;
-}
-
 /* Enhanced Logs Styling */
 .logs-container {
     space-y: 2rem;
@@ -1494,7 +1509,7 @@ body {
 .form-textarea:focus {
     outline: none;
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(1, 107, 97, 0.1);
 }
 
 .form-textarea::placeholder {
