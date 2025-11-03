@@ -1,15 +1,21 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
+from flask_compress import Compress
 from datetime import datetime, date, timedelta
 import os
 import json
 import csv
 import io
+from functools import wraps
+import time
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///second_brain.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
+app.config['COMPRESS_MIMETYPES'] = ['text/html', 'text/css', 'application/json', 'application/javascript']
+
+Compress(app)
 
 db = SQLAlchemy(app)
 
@@ -46,29 +52,24 @@ class Habit(db.Model):
     last_completed = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Phase 3: Smart Functions
+# Smart Functions
 def generate_daily_recap():
-    """Generate automatic daily recap based on today's activities"""
     today = date.today()
     
-    # Get today's completed tasks
     completed_tasks = Task.query.filter(
         db.func.date(Task.updated_at) == today,
         Task.completed == True
     ).all()
     
-    # Get overdue tasks
     overdue_tasks = Task.query.filter(
         Task.due_date < datetime.now(),
         Task.completed == False
     ).all()
     
-    # Get recent notes
     recent_notes = Note.query.filter(
         db.func.date(Note.created_at) == today
     ).all()
     
-    # Generate recap text
     recap = {
         'completed_count': len(completed_tasks),
         'overdue_count': len(overdue_tasks),
@@ -80,7 +81,6 @@ def generate_daily_recap():
     return recap
 
 def generate_ai_summary(completed_tasks, overdue_tasks, recent_notes):
-    """Generate AI-like summary of the day"""
     if not completed_tasks and not recent_notes:
         return "A quiet day. Consider adding some tasks or notes for tomorrow!"
     
@@ -99,7 +99,6 @@ def generate_ai_summary(completed_tasks, overdue_tasks, recent_notes):
     if recent_notes:
         summary_parts.append(f"Captured {len(recent_notes)} new ideas")
     
-    # Add motivational message
     productivity = len(completed_tasks) - len(overdue_tasks)
     if productivity > 3:
         summary_parts.append("Great productivity today! 🎉")
@@ -111,14 +110,12 @@ def generate_ai_summary(completed_tasks, overdue_tasks, recent_notes):
     return " ".join(summary_parts)
 
 def calculate_productivity_score(completed_tasks, overdue_tasks):
-    """Calculate a simple productivity score (0-100)"""
     base_score = len(completed_tasks) * 10
     penalty = len(overdue_tasks) * 5
     score = max(0, min(100, base_score - penalty))
     return score
 
 def initialize_default_habits():
-    """Initialize default habits for new users"""
     existing_habits = Habit.query.count()
     if existing_habits > 0:
         return
@@ -140,7 +137,6 @@ def initialize_default_habits():
     db.session.commit()
 
 def update_habit_streak(habit_id, completed=True):
-    """Update habit streak based on completion"""
     habit = Habit.query.get(habit_id)
     today = date.today()
     
@@ -157,61 +153,6 @@ def update_habit_streak(habit_id, completed=True):
     db.session.commit()
     return habit.streak_count
 
-# Phase 3: Advanced Search Function
-def search_content(query):
-    """Search across all content types"""
-    results = {
-        'tasks': [],
-        'notes': [],
-        'habits': []
-    }
-    
-    # Search tasks
-    tasks = Task.query.filter(
-        (Task.title.ilike(f'%{query}%')) | 
-        (Task.description.ilike(f'%{query}%'))
-    ).all()
-    
-    for task in tasks:
-        results['tasks'].append({
-            'id': task.id,
-            'title': task.title,
-            'description': task.description,
-            'type': 'task',
-            'completed': task.completed
-        })
-    
-    # Search notes
-    notes = Note.query.filter(
-        (Note.content.ilike(f'%{query}%')) |
-        (Note.tags.ilike(f'%{query}%'))
-    ).all()
-    
-    for note in notes:
-        results['notes'].append({
-            'id': note.id,
-            'content': note.content[:100] + '...' if len(note.content) > 100 else note.content,
-            'tags': note.tags,
-            'type': 'note'
-        })
-    
-    # Search habits
-    habits = Habit.query.filter(
-        (Habit.name.ilike(f'%{query}%')) |
-        (Habit.description.ilike(f'%{query}%'))
-    ).all()
-    
-    for habit in habits:
-        results['habits'].append({
-            'id': habit.id,
-            'name': habit.name,
-            'description': habit.description,
-            'type': 'habit',
-            'streak': habit.streak_count
-        })
-    
-    return results
-
 # Routes
 @app.route('/')
 def index():
@@ -219,23 +160,32 @@ def index():
     today_tasks = Task.query.filter(
         (Task.due_date <= datetime.today()) | (Task.due_date.is_(None)),
         Task.completed == False
-    ).all()
+    ).order_by(Task.due_date.asc()).limit(50).all()
     
     completed_today = Task.query.filter(
         db.func.date(Task.updated_at) == today,
         Task.completed == True
     ).count()
     
-    recent_notes = Note.query.order_by(Note.updated_at.desc()).limit(5).all()
+    recent_notes = Note.query.order_by(Note.updated_at.desc()).limit(10).all()
     current_date = datetime.now()
     daily_recap = generate_daily_recap()
+    
+    tasks_count = Task.query.count()
+    notes_count = Note.query.count()
+    habits_count = Habit.query.count()
+    completed_tasks_count = Task.query.filter_by(completed=True).count()
     
     return render_template('index.html', 
                          today_tasks=today_tasks,
                          completed_today=completed_today,
                          recent_notes=recent_notes,
                          current_date=current_date,
-                         daily_recap=daily_recap)
+                         daily_recap=daily_recap,
+                         tasks_count=tasks_count,
+                         notes_count=notes_count,
+                         habits_count=habits_count,
+                         completed_tasks_count=completed_tasks_count)
 
 @app.route('/tasks')
 def tasks():
@@ -267,12 +217,22 @@ def search():
 
 @app.route('/export')
 def export_data():
-    return render_template('export.html')
+    tasks_count = Task.query.count()
+    notes_count = Note.query.count()
+    habits_count = Habit.query.count()
+    completed_tasks_count = Task.query.filter_by(completed=True).count()
+    
+    return render_template('export.html',
+                         tasks_count=tasks_count,
+                         notes_count=notes_count,
+                         habits_count=habits_count,
+                         completed_tasks_count=completed_tasks_count)
 
-# API Routes
+# API Routes for Tasks
 @app.route('/api/tasks', methods=['POST'])
 def create_task():
     data = request.get_json()
+    
     due_date = None
     if data.get('due_date'):
         try:
@@ -331,6 +291,7 @@ def get_task(task_id):
         'completed': task.completed
     })
 
+# API Routes for Notes
 @app.route('/api/notes', methods=['POST'])
 def create_note():
     data = request.get_json()
@@ -358,11 +319,76 @@ def delete_note(note_id):
     db.session.commit()
     return jsonify({'message': 'Note deleted successfully'})
 
-@app.route('/api/daily-recap')
-def get_daily_recap():
-    recap = generate_daily_recap()
-    return jsonify(recap)
+# API Routes for Logs - COMPLETE AND WORKING
+@app.route('/api/logs', methods=['POST'])
+def create_log():
+    try:
+        data = request.get_json()
+        today = date.today()
+        
+        # Check if log already exists for today
+        existing_log = DailyLog.query.filter_by(date=today).first()
+        if existing_log:
+            return jsonify({'error': 'Log already exists for today'}), 400
+        
+        log = DailyLog(
+            date=today,
+            accomplishments=data.get('accomplishments', ''),
+            missed_items=data.get('missed_items', ''),
+            tomorrow_plan=data.get('tomorrow_plan', '')
+        )
+        db.session.add(log)
+        db.session.commit()
+        return jsonify({'id': log.id, 'message': 'Daily log created successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
+@app.route('/api/logs/<int:log_id>', methods=['PUT'])
+def update_log(log_id):
+    try:
+        log = DailyLog.query.get_or_404(log_id)
+        data = request.get_json()
+        
+        log.accomplishments = data.get('accomplishments', log.accomplishments)
+        log.missed_items = data.get('missed_items', log.missed_items)
+        log.tomorrow_plan = data.get('tomorrow_plan', log.tomorrow_plan)
+        
+        db.session.commit()
+        return jsonify({'message': 'Log updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/logs/<int:log_id>', methods=['DELETE'])
+def delete_log(log_id):
+    try:
+        log = DailyLog.query.get_or_404(log_id)
+        db.session.delete(log)
+        db.session.commit()
+        return jsonify({'message': 'Log deleted successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/logs/today')
+def get_today_log():
+    try:
+        today = date.today()
+        log = DailyLog.query.filter_by(date=today).first()
+        
+        if log:
+            return jsonify({
+                'id': log.id,
+                'date': log.date.isoformat(),
+                'accomplishments': log.accomplishments or '',
+                'missed_items': log.missed_items or '',
+                'tomorrow_plan': log.tomorrow_plan or '',
+                'exists': True
+            })
+        else:
+            return jsonify({'exists': False})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# API Routes for Habits
 @app.route('/api/habits')
 def get_habits():
     habits = Habit.query.all()
@@ -394,22 +420,19 @@ def api_initialize_habits():
     initialize_default_habits()
     return jsonify({'message': 'Default habits initialized'})
 
-@app.route('/api/search')
-def api_search():
-    query = request.args.get('q', '')
-    results = search_content(query)
-    return jsonify(results)
+# Other APIs
+@app.route('/api/daily-recap')
+def get_daily_recap():
+    recap = generate_daily_recap()
+    return jsonify(recap)
 
 @app.route('/api/export/csv')
 def export_csv():
-    # Create CSV in memory
     output = io.StringIO()
     writer = csv.writer(output)
     
-    # Write headers
     writer.writerow(['Type', 'Title/Content', 'Description/Tags', 'Status', 'Created Date'])
     
-    # Write tasks
     tasks = Task.query.all()
     for task in tasks:
         writer.writerow([
@@ -420,7 +443,6 @@ def export_csv():
             task.created_at.strftime('%Y-%m-%d')
         ])
     
-    # Write notes
     notes = Note.query.all()
     for note in notes:
         writer.writerow([
@@ -431,7 +453,6 @@ def export_csv():
             note.created_at.strftime('%Y-%m-%d')
         ])
     
-    # Write habits
     habits = Habit.query.all()
     for habit in habits:
         writer.writerow([
@@ -456,10 +477,11 @@ def export_json():
         'tasks': [],
         'notes': [],
         'habits': [],
-        'export_date': datetime.now().isoformat()
+        'logs': [],
+        'export_date': datetime.now().isoformat(),
+        'version': '1.0'
     }
     
-    # Export tasks
     tasks = Task.query.all()
     for task in tasks:
         data['tasks'].append({
@@ -470,7 +492,6 @@ def export_json():
             'created_at': task.created_at.isoformat()
         })
     
-    # Export notes
     notes = Note.query.all()
     for note in notes:
         data['notes'].append({
@@ -479,7 +500,6 @@ def export_json():
             'created_at': note.created_at.isoformat()
         })
     
-    # Export habits
     habits = Habit.query.all()
     for habit in habits:
         data['habits'].append({
@@ -490,10 +510,30 @@ def export_json():
             'created_at': habit.created_at.isoformat()
         })
     
+    logs = DailyLog.query.all()
+    for log in logs:
+        data['logs'].append({
+            'date': log.date.isoformat(),
+            'accomplishments': log.accomplishments,
+            'missed_items': log.missed_items,
+            'tomorrow_plan': log.tomorrow_plan,
+            'created_at': log.created_at.isoformat()
+        })
+    
     return jsonify(data)
+
+@app.route('/health')
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'version': '1.0.0'
+    })
 
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         initialize_default_habits()
-    app.run(debug=True)
+    
+    debug_mode = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
