@@ -136,7 +136,7 @@ FLASK_ENV=development
 PORT=5000
 ```
 
-## 🎨 Customization
+## Customization
 
 ### Color Themes
 The app uses CSS custom properties for easy theming. Edit `static/css/style.css`:
@@ -157,7 +157,7 @@ The app uses CSS custom properties for easy theming. Edit `static/css/style.css`
 4. Add template if needed
 5. Update navigation in `base.html`
 
-## 📱 PWA Features
+## PWA Features
 
 ### Installation
 - **Chrome**: Click install button in address bar
@@ -167,7 +167,7 @@ The app uses CSS custom properties for easy theming. Edit `static/css/style.css`
 ### Offline Usage
 The app caches essential resources and works offline. Your data syncs when connection is restored.
 
-## 🔒 Data & Privacy
+## Data & Privacy
 
 ### Data Storage
 - All data stored locally in SQLite database
@@ -179,7 +179,7 @@ The app caches essential resources and works offline. Your data syncs when conne
 - Database file backed up in `data/` directory
 - No external data sharing
 
-## 🚀 Deployment
+## Deployment
 
 ### Production Setup
 ```bash
