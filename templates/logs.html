@@ -2,44 +2,163 @@
 
 {% block content %}
 <div class="page-header">
-    <h1>Daily Logs</h1>
-    <button onclick="alert('Log creation coming in Phase 3!')" class="btn-primary">Add Today's Log</button>
+    <h1>📔 Daily Logs</h1>
+    <button id="addLogBtn" class="btn-primary">Add Today's Log</button>
 </div>
 
 <div class="logs-container">
-    <div class="logs-list">
-        {% for log in logs %}
-        <div class="log-card">
-            <div class="log-header">
-                <h3>{{ log.date.strftime('%A, %B %d, %Y') }}</h3>
-            </div>
-            <div class="log-content">
-                {% if log.accomplishments %}
-                <div class="log-section">
-                    <h4>✅ Accomplishments</h4>
-                    <p>{{ log.accomplishments|replace('\n', '<br>')|safe }}</p>
-                </div>
-                {% endif %}
-                {% if log.missed_items %}
-                <div class="log-section">
-                    <h4>❌ Missed</h4>
-                    <p>{{ log.missed_items|replace('\n', '<br>')|safe }}</p>
-                </div>
-                {% endif %}
-                {% if log.tomorrow_plan %}
-                <div class="log-section">
-                    <h4>📅 Tomorrow's Plan</h4>
-                    <p>{{ log.tomorrow_plan|replace('\n', '<br>')|safe }}</p>
-                </div>
-                {% endif %}
+    <!-- Today's Log Section -->
+    <div class="today-log-section">
+        <div class="section-header">
+            <h2>Today's Log</h2>
+            <span class="date-badge">{{ date.today().strftime('%B %d, %Y') }}</span>
+        </div>
+        <div id="todayLogContent" class="today-log-content">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading today's log...</p>
             </div>
         </div>
-        {% else %}
-        <div class="empty-state">
-            <h3>No logs yet</h3>
-            <p>Log creation feature coming in Phase 3!</p>
+    </div>
+
+    <!-- Past Logs Section -->
+    <div class="past-logs-section">
+        <div class="section-header">
+            <h2>Past Logs</h2>
+            <span class="count-badge">{{ logs|length }} entries</span>
         </div>
-        {% endfor %}
+        
+        <div class="logs-list">
+            {% for log in logs %}
+            <div class="log-card" data-log-id="{{ log.id }}">
+                <div class="log-header">
+                    <div class="log-date">
+                        <h3>{{ log.date.strftime('%A') }}</h3>
+                        <span class="log-date-full">{{ log.date.strftime('%B %d, %Y') }}</span>
+                    </div>
+                    <div class="log-actions">
+                        <button onclick="editLog({{ log.id }})" class="btn-icon" title="Edit log">✏️</button>
+                        <button onclick="deleteLog({{ log.id }})" class="btn-icon btn-danger" title="Delete log">🗑️</button>
+                    </div>
+                </div>
+                
+                <div class="log-content">
+                    {% if log.accomplishments %}
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <span class="log-section-icon">✅</span>
+                            <h4>Accomplishments</h4>
+                        </div>
+                        <div class="log-section-content">
+                            {{ log.accomplishments|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if log.missed_items %}
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <span class="log-section-icon">❌</span>
+                            <h4>Missed Items</h4>
+                        </div>
+                        <div class="log-section-content">
+                            {{ log.missed_items|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if log.tomorrow_plan %}
+                    <div class="log-section">
+                        <div class="log-section-header">
+                            <span class="log-section-icon">📅</span>
+                            <h4>Tomorrow's Plan</h4>
+                        </div>
+                        <div class="log-section-content">
+                            {{ log.tomorrow_plan|replace('\n', '<br>')|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not log.accomplishments and not log.missed_items and not log.tomorrow_plan %}
+                    <div class="empty-log">
+                        <p>No content recorded for this day.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <h3>No past logs yet</h3>
+                <p>Your daily logs will appear here once you create them!</p>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
+
+<!-- Add/Edit Log Modal -->
+<div id="logModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="logModalTitle">Add Today's Log</h2>
+            <button type="button" onclick="closeLogModal()" class="btn-close">×</button>
+        </div>
+        
+        <form id="logForm">
+            <input type="hidden" id="logId">
+            
+            <div class="form-group">
+                <label for="accomplishments" class="form-label">
+                    <span class="label-icon">✅</span>
+                    Accomplishments
+                </label>
+                <textarea 
+                    id="accomplishments" 
+                    rows="4" 
+                    placeholder="What did you accomplish today?&#10;• Completed project X&#10;• Learned new skill&#10;• Had productive meeting"
+                    class="form-textarea"
+                ></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="missedItems" class="form-label">
+                    <span class="label-icon">❌</span>
+                    Missed Items
+                </label>
+                <textarea 
+                    id="missedItems" 
+                    rows="3" 
+                    placeholder="What didn't get done?&#10;• Need to finish report&#10;• Missed workout&#10;• Forgot to call back"
+                    class="form-textarea"
+                ></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="tomorrowPlan" class="form-label">
+                    <span class="label-icon">📅</span>
+                    Tomorrow's Plan
+                </label>
+                <textarea 
+                    id="tomorrowPlan" 
+                    rows="3" 
+                    placeholder="What's planned for tomorrow?&#10;• Finish project proposal&#10;• Schedule meetings&#10;• Exercise routine"
+                    class="form-textarea"
+                ></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="closeLogModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">
+                    <span id="saveLogText">Save Today's Log</span>
+                    <div id="logLoadingSpinner" class="loading-spinner hidden"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/logs.js') }}"></script>
 {% endblock %}

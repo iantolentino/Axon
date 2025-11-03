@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Second Brain - Your personal productivity and memory assistant">
+    <meta name="theme-color" content="#3b82f6">
+    
     <title>Second Brain - Personal Memory App</title>
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
 </head>
@@ -33,5 +38,30 @@
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
+    
+    <!-- COMPLETELY DISABLE SERVICE WORKER FOR DEVELOPMENT -->
+    <script>
+        // Completely disable service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    console.log('Unregistering service worker:', registration);
+                    registration.unregister();
+                }
+                // Clear all caches
+                caches.keys().then(function(cacheNames) {
+                    cacheNames.forEach(function(cacheName) {
+                        caches.delete(cacheName);
+                    });
+                });
+            });
+        }
+        
+        // Remove offline indicator if it exists
+        const offlineIndicator = document.getElementById('offlineIndicator');
+        if (offlineIndicator) {
+            offlineIndicator.remove();
+        }
+    </script>
 </body>
 </html>
