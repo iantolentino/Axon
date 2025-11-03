@@ -1,17 +1,34 @@
 /* Theme transition smoothness */
 * {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    transition: background-color 0.3s ease, 
+                border-color 0.3s ease, 
+                color 0.3s ease,
+                box-shadow 0.3s ease;
 }
 
-/* Dark theme specific adjustments */
-[data-theme="dark"] .task-card,
-[data-theme="dark"] .stat-card,
-[data-theme="dark"] .dashboard-section {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+/* Dark theme specific enhancements */
+[data-theme="dark"] {
+    /* Additional dark theme refinements */
 }
 
-[data-theme="light"] .task-card,
-[data-theme="light"] .stat-card,
-[data-theme="light"] .dashboard-section {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+[data-theme="light"] {
+    /* Additional light theme refinements */
+}
+
+/* Ensure images and backgrounds transition smoothly */
+img,
+video,
+canvas {
+    transition: opacity 0.3s ease;
+}
+
+/* Prevent flash of unstyled content */
+body {
+    opacity: 1;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }

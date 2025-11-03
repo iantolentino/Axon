@@ -1,20 +1,68 @@
-// Theme Toggle
-const themeToggle = document.getElementById('themeToggle');
-const currentTheme = localStorage.getItem('theme') || 'dark';
+// Enhanced Theme Toggle with Better Design
+class ThemeManager {
+    constructor() {
+        this.currentTheme = localStorage.getItem('theme') || 'dark';
+        this.themeToggle = document.getElementById('themeToggle');
+        this.init();
+    }
 
-document.documentElement.setAttribute('data-theme', currentTheme);
+    init() {
+        // Set initial theme
+        this.applyTheme(this.currentTheme);
+        
+        // Set up event listener
+        this.themeToggle.addEventListener('click', () => {
+            this.toggleTheme();
+        });
 
-themeToggle.addEventListener('click', () => {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        // Update button icon
+        this.updateButtonIcon();
+    }
+
+    toggleTheme() {
+        this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        this.applyTheme(this.currentTheme);
+        this.updateButtonIcon();
+        localStorage.setItem('theme', this.currentTheme);
+    }
+
+    applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // Add smooth transition
+        document.documentElement.style.transition = 'all 0.3s ease';
+        
+        // Dispatch custom event for theme change
+        window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
+    }
+
+    updateButtonIcon() {
+        const icon = this.currentTheme === 'dark' ? '🌙' : '☀️';
+        this.themeToggle.innerHTML = `
+            <div class="theme-toggle-inner">
+                <span class="theme-icon">${icon}</span>
+                <span class="theme-label">${this.currentTheme === 'dark' ? 'Dark' : 'Light'}</span>
+            </div>
+        `;
+    }
+
+    getCurrentTheme() {
+        return this.currentTheme;
+    }
+}
+
+// Initialize theme manager when DOM loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.themeManager = new ThemeManager();
     
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    // Update button text
-    themeToggle.textContent = newTheme === 'dark' ? '🌓' : '🌙';
+    // Add active state to current page in navigation
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if (link.getAttribute('href') === currentPath) {
+            link.classList.add('active');
+        }
+    });
 });
-
 // FAB Functionality
 const fab = document.getElementById('fab');
 fab.addEventListener('click', () => {
@@ -265,3 +313,47 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Enhanced online/offline detection
+function updateOnlineStatus() {
+    const offlineIndicator = document.getElementById('offlineIndicator');
+    if (!navigator.onLine) {
+        offlineIndicator.classList.remove('hidden');
+        console.log('App is offline');
+    } else {
+        offlineIndicator.classList.add('hidden');
+        console.log('App is online');
+    }
+}
+
+// Listen for online/offline events
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// Initial check
+updateOnlineStatus();
+
+// Test network connectivity
+async function testNetwork() {
+    try {
+        const response = await fetch('/health', { 
+            method: 'HEAD',
+            cache: 'no-store'
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+}
+
+// Periodic network checks (optional)
+setInterval(async () => {
+    const isOnline = await testNetwork();
+    const offlineIndicator = document.getElementById('offlineIndicator');
+    
+    if (!isOnline && !offlineIndicator.classList.contains('hidden')) {
+        offlineIndicator.classList.remove('hidden');
+    } else if (isOnline && offlineIndicator.classList.contains('hidden')) {
+        offlineIndicator.classList.add('hidden');
+    }
+}, 30000); // Check every 30 seconds
