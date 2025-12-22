@@ -2,7 +2,7 @@
 # Axon - Personal Memory & Productivity App
 
 ![Second Brain Dashboard](static/screenshots/dashboard.png)
-
+ 
 A comprehensive personal productivity application that serves as your digital memory assistant. Track tasks, notes, habits, and daily logs in one beautifully designed interface.
 
 ## Features
