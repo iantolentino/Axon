@@ -6,7 +6,7 @@
 A comprehensive personal productivity application that serves as your digital memory assistant. Track tasks, notes, habits, and daily logs in one beautifully designed interface.
 
 ## Features
-
+ 
 ### Core Functionality
 - **Task Management** - Create, organize, and track tasks with due dates
 - **Smart Notes** - Capture ideas with tagging and search capabilities
