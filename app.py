@@ -153,6 +153,28 @@ def update_habit_streak(habit_id, completed=True):
     db.session.commit()
     return habit.streak_count
 
+def search_content(query):
+    """Search across tasks, notes, and habits by keyword."""
+    q = f"%{query}%"
+    tasks = Task.query.filter(
+        db.or_(Task.title.ilike(q), Task.description.ilike(q))
+    ).order_by(Task.created_at.desc()).limit(20).all()
+
+    notes = Note.query.filter(
+        db.or_(Note.content.ilike(q), Note.tags.ilike(q))
+    ).order_by(Note.updated_at.desc()).limit(20).all()
+
+    habits = Habit.query.filter(
+        db.or_(Habit.name.ilike(q), Habit.description.ilike(q))
+    ).limit(10).all()
+
+    return {
+        'tasks':  tasks,
+        'notes':  notes,
+        'habits': habits,
+    }
+
+
 # Routes
 @app.route('/')
 def index():
