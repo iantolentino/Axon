@@ -1,254 +1,310 @@
+# ⚡ Axon — Personal Memory & Productivity OS
 
-# Axon - Personal Memory & Productivity App
+> A full-stack productivity app built with a **DevOps-first mindset** — containerized, CI/CD-automated, offline-capable, and production-ready.
 
-![Second Brain Dashboard](static/screenshots/dashboard.png)
- 
-A comprehensive personal productivity application that serves as your digital memory assistant. Track tasks, notes, habits, and daily logs in one beautifully designed interface.
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=flat-square&logo=flask)
+![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?style=flat-square&logo=docker&logoColor=white)
+![CI/CD](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?style=flat-square&logo=githubactions&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Offline--Ready-5A0FC8?style=flat-square&logo=pwa)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-## Features
- 
-### Core Functionality
-- **Task Management** - Create, organize, and track tasks with due dates
-- **Smart Notes** - Capture ideas with tagging and search capabilities
-- **Habit Tracker** - Build routines with streak tracking and completion history
-- **Daily Logs** - Reflect on accomplishments, missed items, and tomorrow's plans
-- **Universal Search** - Find anything across all your content instantly
+---
 
-### User Experience
-- **Dark/Light Theme** - Toggle between beautiful color schemes
-- **Responsive Design** - Works perfectly on desktop, tablet, and mobile
-- **PWA Support** - Install as a native app on any device
-- **Offline Capability** - Access your data even without internet
-- **Smart Daily Recap** - AI-powered daily summaries and productivity insights
+## 📌 What Is This?
 
-### Technical Features
-- **Data Export** - Backup your data in CSV or JSON format
-- **RESTful API** - Complete API for all operations
-- **Real-time Updates** - Instant synchronization across all components
-- **Keyboard Shortcuts** - Power user navigation and quick actions
+Axon is a personal productivity app — tasks, notes, habits, and daily logs in one interface. But the app itself is secondary. This project exists to demonstrate **end-to-end DevOps practices**: containerization, automated pipelines, offline-first data strategy, and clean deployment patterns.
 
-## Quick Start
+---
 
-### Prerequisites
-- Python 3.8+
-- Modern web browser
-- (Optional) SQLite for database
+## 🏗️ Architecture Overview
 
-### Installation
+```
+┌─────────────────────────────────────────────────────────┐
+│                        CLIENT                           │
+│  ┌──────────────┐   ┌──────────────┐  ┌─────────────┐  │
+│  │  Vanilla JS  │   │ Service Worker│  │  localStorage│  │
+│  │  (modules)   │   │ (cache layer) │  │  (fallback) │  │
+│  └──────┬───────┘   └──────┬───────┘  └──────┬──────┘  │
+│         └──────────────────┴─────────────────┘          │
+│                       fetch() interceptor                │
+└─────────────────────────────┬───────────────────────────┘
+                               │ REST / JSON
+┌─────────────────────────────▼───────────────────────────┐
+│                     FLASK + GUNICORN                     │
+│   /api/tasks   /api/notes   /api/habits   /api/logs      │
+│                    SQLAlchemy ORM                        │
+│                    SQLite / PostgreSQL                   │
+└─────────────────────────────────────────────────────────┘
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/second-brain.git
-   cd second-brain
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Initialize the database**
-   ```bash
-   python database/init_db.py
-   ```
-
-4. **Run the application**
-   ```bash
-   python app.py
-   ```
-
-5. **Access the app**
-   Open your browser and navigate to `http://localhost:5000`
-
-### Docker Deployment
-```bash
-# Using Docker Compose
-docker-compose up -d
-
-# Or build manually
-docker build -t second-brain .
-docker run -p 5000:5000 second-brain
+┌─────────────────────────────────────────────────────────┐
+│                   DEPLOYMENT STACK                      │
+│   GitHub Actions → ghcr.io → Docker → VPS / Cloud      │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## 🛠️ Development
+---
 
-### Project Structure
+## 🚀 DevOps Highlights
+
+### 1. Multi-Stage Docker Build
+The Dockerfile uses a **two-stage build** to keep the final image lean and secure:
+
+```dockerfile
+# Stage 1 — builder: compiles dependencies
+FROM python:3.11-slim AS builder
+RUN pip install --prefix=/install -r requirements.txt
+
+# Stage 2 — runtime: copies only what's needed
+FROM python:3.11-slim AS runtime
+COPY --from=builder /install /usr/local
 ```
-second_brain/
-├── app.py                 # Main Flask application
+
+- Final image contains **no build tools** (gcc, pip cache, etc.)
+- Runs as a **non-root user** (`axon`) — principle of least privilege
+- Built-in **health check** on `/health` endpoint for container orchestrators
+
+### 2. GitHub Actions CI/CD Pipeline
+
+Every push to `main` triggers a **3-job pipeline**:
+
+```
+push to main
+     │
+     ▼
+┌─────────┐     ┌───────────────┐     ┌─────────────────┐
+│  🧪 Test │────▶│ 🐳 Build+Push │────▶│ 🚀 Deploy (opt) │
+│  flake8  │     │  ghcr.io tag  │     │  SSH to VPS     │
+│  pytest  │     │  sha + latest │     │  docker compose │
+└─────────┘     └───────────────┘     └─────────────────┘
+```
+
+- **Test job**: flake8 lint (syntax errors block the build), pytest with smoke test fallback
+- **Build job**: Docker Buildx with **GitHub Actions cache** (`cache-from/to: type=gha`) — faster rebuilds
+- **Image tagging**: `latest` + short SHA (`sha-abc1234`) for traceability and rollbacks
+- **Registry**: GitHub Container Registry (`ghcr.io`) — no external registry needed
+
+### 3. Offline-First Data Strategy
+
+The frontend uses a custom **fetch() interceptor** (`storage.js`) that implements a graceful degradation pattern:
+
+```
+Request comes in
+      │
+      ▼
+ Server reachable? ──YES──▶ Use Flask API (SQLite)
+      │
+      NO
+      ▼
+ localStorage fallback ──▶ Full CRUD with local UIDs
+      │
+      ▼
+ Server comes back? ──YES──▶ AxonSync() pushes local records up
+```
+
+No changes to any existing JS files — the interceptor is transparent to the rest of the codebase.
+
+### 4. PWA with Service Worker
+
+- Static assets cached on install via `sw.js`
+- API routes use **network-first** strategy with cache fallback
+- App is installable on desktop and mobile (manifest.json)
+- Service worker **auto-disables on localhost** — no stale cache during development
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Why |
+|---|---|---|
+| Backend | Flask 2.x + Gunicorn | Lightweight WSGI, easy to containerize |
+| ORM | SQLAlchemy | DB-agnostic (SQLite dev, PostgreSQL prod) |
+| Frontend | Vanilla JS (ES6 modules) | Zero build step, minimal footprint |
+| Styling | CSS custom properties | Theme switching without JS frameworks |
+| Container | Docker (multi-stage) | Reproducible, minimal runtime image |
+| Registry | GitHub Container Registry | Free, integrated with Actions |
+| CI/CD | GitHub Actions | Native to repo, no external tools |
+| Offline | Service Worker + localStorage | Works fully without a server |
+| Server | Gunicorn (Linux) / Waitress (Windows) | Production-grade WSGI |
+
+---
+
+## 📁 Project Structure
+
+```
+axon/
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml          # CI/CD pipeline (test → build → deploy)
 ├── database/
-│   ├── init_db.py        # Database initialization
-│   └── schema.sql        # Database schema
-├── templates/            # HTML templates
+│   ├── init_db.py             # DB initialization script
+│   └── schema.sql             # Raw schema (used for reference/migrations)
 ├── static/
-│   ├── css/             # Stylesheets
-│   ├── js/              # Frontend JavaScript
-│   └── icons/           # App icons
-├── config.py            # Configuration settings
-└── requirements.txt     # Python dependencies
+│   ├── css/
+│   │   └── style.css          # Full design system (CSS variables, responsive)
+│   ├── js/
+│   │   ├── storage.js         # ⭐ fetch() interceptor + localStorage fallback
+│   │   ├── main.js            # Theme, notifications, keyboard shortcuts
+│   │   ├── tasks.js           # Task CRUD module
+│   │   ├── notes.js           # Notes CRUD module
+│   │   ├── habits.js          # Habit tracker module
+│   │   └── logs.js            # Daily log module
+│   ├── manifest.json          # PWA manifest
+│   └── sw.js                  # Service worker (cache strategy)
+├── templates/
+│   ├── base.html              # Layout shell (sidebar, topbar, bottom nav)
+│   ├── index.html             # Dashboard
+│   ├── tasks.html
+│   ├── notes.html
+│   ├── habits.html
+│   ├── logs.html
+│   ├── search.html
+│   └── export.html
+├── app.py                     # Flask app, models, all API routes
+├── config.py                  # Environment-based configuration
+├── gunicorn.conf.py           # Gunicorn worker config
+├── production.py              # Waitress entry point (Windows)
+├── Dockerfile                 # Multi-stage production image
+├── docker-compose.yml         # Local full-stack setup
+└── requirements.txt
 ```
 
-### Technology Stack
-- **Backend**: Flask, SQLAlchemy, SQLite
-- **Frontend**: Vanilla JavaScript, CSS3, HTML5
-- **Database**: SQLite (with PostgreSQL support ready)
-- **Deployment**: Docker, Waitress, Gunicorn
-- **PWA**: Service Workers, Web App Manifest
+---
 
-### API Documentation
+## ⚡ Quick Start
 
-#### Tasks
-```http
-GET    /api/tasks                 # List all tasks
-POST   /api/tasks                 # Create new task
-PUT    /api/tasks/{id}           # Update task
-DELETE /api/tasks/{id}           # Delete task
-```
+### Option A — Local Python
 
-#### Notes
-```http
-GET    /api/notes                 # List all notes  
-POST   /api/notes                 # Create new note
-PUT    /api/notes/{id}           # Update note
-DELETE /api/notes/{id}           # Delete note
-```
-
-#### Habits
-```http
-GET    /api/habits                # List all habits
-POST   /api/habits/{id}/complete  # Mark habit complete
-POST   /api/habits/{id}/skip      # Skip habit for today
-```
-
-#### Daily Logs
-```http
-GET    /api/logs/today           # Get today's log
-POST   /api/logs                 # Create today's log
-PUT    /api/logs/{id}           # Update log
-DELETE /api/logs/{id}           # Delete log
-```
-
-### Environment Variables
 ```bash
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///second_brain.db
-FLASK_ENV=development
+git clone https://github.com/yourusername/axon.git
+cd axon
+
+pip install -r requirements.txt
+python app.py
+# → http://localhost:5000
+```
+
+### Option B — Docker (recommended)
+
+```bash
+# Build and run
+docker build -t axon .
+docker run -p 5000:5000 -v axon_data:/app/instance axon
+
+# Or with Compose
+docker compose up -d
+```
+
+### Option C — Run without a server
+
+Just open `index.html` in a browser. `storage.js` detects the server is unreachable and switches to localStorage automatically. All features work.
+
+---
+
+## 🔁 CI/CD Pipeline — Step by Step
+
+```bash
+# 1. Push to main
+git push origin main
+
+# 2. GitHub Actions triggers automatically:
+#    ✅ flake8 lint
+#    ✅ Database smoke test
+#    ✅ pytest (if tests/ exists)
+#    🐳 docker buildx build --platform linux/amd64
+#    📦 push to ghcr.io/yourname/axon:latest
+#         and ghcr.io/yourname/axon:sha-abc1234
+
+# 3. Pull the image anywhere
+docker pull ghcr.io/yourusername/axon:latest
+docker run -p 5000:5000 ghcr.io/yourusername/axon:latest
+```
+
+---
+
+## 🌐 API Reference
+
+All endpoints return JSON. No authentication required (single-user app).
+
+```
+Tasks
+  GET    /api/tasks              List all tasks
+  POST   /api/tasks              Create task  { title, description, due_date }
+  GET    /api/tasks/:id          Get one task
+  PUT    /api/tasks/:id          Update task
+  DELETE /api/tasks/:id          Delete task
+
+Notes
+  GET    /api/notes              List all notes
+  POST   /api/notes              Create note  { content, tags }
+  PUT    /api/notes/:id          Update note
+  DELETE /api/notes/:id          Delete note
+
+Habits
+  GET    /api/habits             List habits with streak data
+  POST   /api/habits/:id/complete  Mark complete (updates streak)
+  POST   /api/habits/:id/skip      Skip today
+
+Logs
+  GET    /api/logs/today         Get today's log
+  POST   /api/logs               Create log  { accomplishments, missed_items, tomorrow_plan }
+  PUT    /api/logs/:id           Update log
+  DELETE /api/logs/:id           Delete log
+
+System
+  GET    /health                 { status, timestamp, version }
+  GET    /api/daily-recap        Computed productivity summary
+  GET    /api/export/csv         Download all data as CSV
+  GET    /api/export/json        Download all data as JSON
+```
+
+---
+
+## 🔧 Environment Variables
+
+```bash
+SECRET_KEY=your-secret-key-here        # Flask session signing key
+DATABASE_URL=sqlite:///second_brain.db  # Swap to postgresql://... for prod
+FLASK_ENV=development                   # or production
 PORT=5000
 ```
 
-## Customization
+---
 
-### Color Themes
-The app uses CSS custom properties for easy theming. Edit `static/css/style.css`:
+## 🐳 Docker Details
 
-```css
-:root {
-    --primary-bg: #9ECFD4;
-    --secondary-bg: #70B2B2;
-    --accent-primary: #016B61;
-    /* Add your custom colors */
-}
-```
-
-### Adding New Features
-1. Create database model in `app.py`
-2. Add API routes following REST conventions
-3. Create frontend JavaScript module
-4. Add template if needed
-5. Update navigation in `base.html`
-
-## PWA Features
-
-### Installation
-- **Chrome**: Click install button in address bar
-- **Safari**: Share → Add to Home Screen
-- **Firefox**: Menu → Install
-
-### Offline Usage
-The app caches essential resources and works offline. Your data syncs when connection is restored.
-
-## Data & Privacy
-
-### Data Storage
-- All data stored locally in SQLite database
-- Optional cloud sync can be implemented
-- Full export capabilities for data portability
-
-### Backup
-- Regular CSV/JSON exports recommended
-- Database file backed up in `data/` directory
-- No external data sharing
-
-## Deployment
-
-### Production Setup
 ```bash
-# Using production server
-python production.py
+# Build only
+docker build -t axon:local .
 
-# Using Gunicorn (Linux/Mac)
-gunicorn -c gunicorn.conf.py app:app
+# Run with persistent SQLite volume
+docker run -d \
+  --name axon \
+  -p 5000:5000 \
+  -v axon_db:/app/instance \
+  -e SECRET_KEY=change-me \
+  axon:local
 
-# Using Waitress (Windows)
-waitress-serve --port=5000 app:app
+# Check health
+docker inspect --format='{{.State.Health.Status}}' axon
+
+# View logs
+docker logs -f axon
 ```
 
-### Deployment Options
-- **Traditional VPS**: Use provided deployment scripts
-- **Docker**: Use docker-compose for full stack
-- **Cloud Platforms**: Ready for Heroku, Railway, etc.
-- **Static Hosting**: Can be adapted for static deployment 
+---
 
-### Development Setup
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+## 🗺️ Roadmap
 
-### Code Style
-- Follow PEP 8 for Python code
-- Use meaningful variable names
-- Comment complex logic
-- Update documentation for new features
+- [ ] PostgreSQL support via `DATABASE_URL` env var
+- [ ] Multi-user auth (Flask-Login)
+- [ ] Kubernetes manifests (Deployment + Service + PVC)
+- [ ] Prometheus `/metrics` endpoint
+- [ ] Automated database migrations (Alembic)
+- [ ] End-to-end tests with Playwright
 
-## Performance
+---
 
-- **First Load**: < 2 seconds
-- **Database Queries**: Optimized with indexes
-- **Frontend**: Vanilla JS for minimal bundle size
-- **Caching**: Service worker for static assets
+## 📄 License
 
-## Troubleshooting
-
-### Common Issues
-
-**Database errors:**
-```bash
-python database/init_db.py
-```
-
-**Port already in use:**
-```bash
-python app.py --port 5001
-```
-
-**Static files not loading:**
-- Check file permissions
-- Verify file paths in templates
-- Clear browser cache
-
-### Getting Help
-- Check existing [GitHub Issues](../../issues)
-- Create a new issue with detailed description
-- Include browser console errors if applicable
-
-## Acknowledgments
-
-- Inspired by personal knowledge management systems
-- Built with Flask and modern web standards
-- Icons from Twemoji and custom designs
-- Color palette designed for accessibility
-
-```
-
+MIT — do whatever you want with it.
