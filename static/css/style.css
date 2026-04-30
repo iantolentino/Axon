@@ -6,47 +6,72 @@
 }
 
 :root {
-    /* New Color Palette - Light Mode */
+    /* ================================
+       Color Palette — Light Mode
+       ================================ */
+
+    /* Backgrounds */
     --primary-bg: #9ECFD4;
     --secondary-bg: #70B2B2;
     --tertiary-bg: #E5E9C5;
+
+    /* Text */
     --text-primary: #000000;
     --text-secondary: #333333;
     --text-muted: #666666;
+
+    /* Accents */
     --accent-primary: #016B61;
     --accent-secondary: #70B2B2;
     --accent-success: #10b981;
     --accent-warning: #f59e0b;
     --accent-error: #ef4444;
+
+    /* Borders */
     --border-color: #E5E9C5;
     --border-light: #f1f5f9;
+
+    /* Shadows */
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+    /* Radius */
     --radius: 0.5rem;
     --radius-lg: 0.75rem;
 }
 
 [data-theme="dark"] {
-    /* New Color Palette - Dark Mode */
+    /* ================================
+       Color Palette — Dark Mode
+       ================================ */
+
+    /* Backgrounds */
     --primary-bg: #016B61;
     --secondary-bg: #70B2B2;
     --tertiary-bg: #E5E9C5;
-    --text-primary: #000000;  
+
+    /* Text */
+    --text-primary: #000000;
     --text-secondary: #333333;
     --text-muted: #666666;
+
+    /* Accents */
     --accent-primary: #9ECFD4;
     --accent-secondary: #70B2B2;
     --accent-success: #34d399;
     --accent-warning: #fbbf24;
     --accent-error: #f87171;
+
+    /* Borders */
     --border-color: #E5E9C5;
     --border-light: #475569;
+
+    /* Shadows */
     --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
 }
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--primary-bg);
