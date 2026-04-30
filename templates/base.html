@@ -2,66 +2,215 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Second Brain - Your personal productivity and memory assistant">
-    <meta name="theme-color" content="#3b82f6">
-    
-    <title>Second Brain - Personal Memory App</title>
-    <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="Axon - Your personal productivity and memory assistant">
+    <meta name="theme-color" content="#38bdf8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Axon">
+
+    <title>{% block title %}Axon{% endblock %} — Personal Memory App</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" href="/static/icons/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+
+    <!-- Storage layer MUST load first — intercepts all fetch() calls -->
+    <script src="{{ url_for('static', filename='js/storage.js') }}"></script>
 </head>
 <body>
-    <nav class="navbar">
-        <div class="nav-brand">
-            <h1>🧠 Second Brain</h1>
-        </div>
-        <div class="nav-links">
-            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
-            <a href="{{ url_for('tasks') }}" class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}">Tasks</a>
-            <a href="{{ url_for('notes') }}" class="nav-link {% if request.endpoint == 'notes' %}active{% endif %}">Notes</a>
-            <a href="{{ url_for('habits') }}" class="nav-link {% if request.endpoint == 'habits' %}active{% endif %}">Habits</a>
-            <a href="{{ url_for('logs') }}" class="nav-link {% if request.endpoint == 'logs' %}active{% endif %}">Logs</a>
-            <a href="{{ url_for('search') }}" class="nav-link {% if request.endpoint == 'search' %}active{% endif %}">Search</a>
-            <a href="{{ url_for('export_data') }}" class="nav-link {% if request.endpoint == 'export_data' %}active{% endif %}">Export</a>
-        </div>
-        <button id="themeToggle" class="theme-toggle">🌓</button>
+
+<!-- ═══════════════════════════════════════════
+     OFFLINE INDICATOR
+════════════════════════════════════════════ -->
+<div id="offlineIndicator" class="hidden">📡 Offline — using local storage</div>
+
+<!-- ═══════════════════════════════════════════
+     SIDEBAR (desktop)
+════════════════════════════════════════════ -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-name">⚡ Axon</div>
+        <div class="brand-sub">Personal Memory OS</div>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Main navigation">
+        <div class="nav-section-label">Workspace</div>
+
+        <a href="{{ url_for('index') }}"
+           class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+            <span class="nav-icon">🏠</span> Dashboard
+        </a>
+        <a href="{{ url_for('tasks') }}"
+           class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}">
+            <span class="nav-icon">✅</span> Tasks
+        </a>
+        <a href="{{ url_for('notes') }}"
+           class="nav-link {% if request.endpoint == 'notes' %}active{% endif %}">
+            <span class="nav-icon">📝</span> Notes
+        </a>
+        <a href="{{ url_for('habits') }}"
+           class="nav-link {% if request.endpoint == 'habits' %}active{% endif %}">
+            <span class="nav-icon">🔁</span> Habits
+        </a>
+        <a href="{{ url_for('logs') }}"
+           class="nav-link {% if request.endpoint == 'logs' %}active{% endif %}">
+            <span class="nav-icon">📔</span> Daily Logs
+        </a>
+
+        <div class="nav-section-label">Tools</div>
+
+        <a href="{{ url_for('search') }}"
+           class="nav-link {% if request.endpoint == 'search' %}active{% endif %}">
+            <span class="nav-icon">🔍</span> Search
+        </a>
+        <a href="{{ url_for('export_data') }}"
+           class="nav-link {% if request.endpoint == 'export_data' %}active{% endif %}">
+            <span class="nav-icon">📤</span> Export
+        </a>
     </nav>
 
-    <main class="container">
+    <div class="sidebar-footer" id="sidebarFooter">
+        <button id="themeToggle" aria-label="Toggle theme">
+            <span id="themeIcon">🌙</span>
+            <span id="themeLabel">Dark Mode</span>
+        </button>
+        <!-- storage badge injected here by storage.js -->
+    </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════
+     TOPBAR (mobile)
+════════════════════════════════════════════ -->
+<header class="topbar">
+    <span class="topbar-brand">⚡ Axon</span>
+    <div class="topbar-actions" id="topbarActions">
+        <button id="themeToggleMobile" class="btn-icon" aria-label="Toggle theme">🌙</button>
+        <!-- storage badge injected here by storage.js on mobile -->
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════ -->
+<div class="app-layout">
+    <main class="main-content" id="mainContent">
         {% block content %}{% endblock %}
     </main>
+</div>
 
-    <!-- Floating Action Button -->
-    <button id="fab" class="fab">+</button>
+<!-- ═══════════════════════════════════════════
+     BOTTOM NAV (mobile)
+════════════════════════════════════════════ -->
+<nav class="bottom-nav" aria-label="Mobile navigation">
+    <div class="bottom-nav-inner">
+        <a href="{{ url_for('index') }}"
+           class="bottom-nav-item {% if request.endpoint == 'index' %}active{% endif %}">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('tasks') }}"
+           class="bottom-nav-item {% if request.endpoint == 'tasks' %}active{% endif %}">
+            <span class="nav-icon">✅</span>
+            <span>Tasks</span>
+        </a>
+        <a href="{{ url_for('notes') }}"
+           class="bottom-nav-item {% if request.endpoint == 'notes' %}active{% endif %}">
+            <span class="nav-icon">📝</span>
+            <span>Notes</span>
+        </a>
+        <a href="{{ url_for('habits') }}"
+           class="bottom-nav-item {% if request.endpoint == 'habits' %}active{% endif %}">
+            <span class="nav-icon">🔁</span>
+            <span>Habits</span>
+        </a>
+        <a href="{{ url_for('logs') }}"
+           class="bottom-nav-item {% if request.endpoint == 'logs' %}active{% endif %}">
+            <span class="nav-icon">📔</span>
+            <span>Logs</span>
+        </a>
+    </div>
+</nav>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block scripts %}{% endblock %}
-    
-    <!-- COMPLETELY DISABLE SERVICE WORKER FOR DEVELOPMENT -->
-    <script>
-        // Completely disable service worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    console.log('Unregistering service worker:', registration);
-                    registration.unregister();
-                }
-                // Clear all caches
-                caches.keys().then(function(cacheNames) {
-                    cacheNames.forEach(function(cacheName) {
-                        caches.delete(cacheName);
-                    });
-                });
-            });
+<!-- ═══════════════════════════════════════════
+     FLOATING ACTION BUTTON
+════════════════════════════════════════════ -->
+<button id="fab" aria-label="Quick add">＋</button>
+
+<!-- ═══════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════ -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notification.js') }}"></script>
+
+{% block scripts %}{% endblock %}
+
+<script>
+// ── Theme toggle wiring (sidebar + mobile topbar) ──────────────────────────
+(function () {
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('theme', t);
+        const icon  = t === 'dark' ? '🌙' : '☀️';
+        const label = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+        const ti = document.getElementById('themeIcon');
+        const tl = document.getElementById('themeLabel');
+        const tm = document.getElementById('themeToggleMobile');
+        if (ti) ti.textContent = icon;
+        if (tl) tl.textContent = label;
+        if (tm) tm.textContent = icon;
+    }
+
+    // Apply saved theme immediately (avoids flash)
+    const saved = localStorage.getItem('theme') || 'dark';
+    applyTheme(saved);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('themeToggle');
+        const toggleM = document.getElementById('themeToggleMobile');
+        function onToggle() {
+            const current = document.documentElement.getAttribute('data-theme');
+            applyTheme(current === 'dark' ? 'light' : 'dark');
         }
-        
-        // Remove offline indicator if it exists
-        const offlineIndicator = document.getElementById('offlineIndicator');
-        if (offlineIndicator) {
-            offlineIndicator.remove();
-        }
-    </script>
+        if (toggle)  toggle.addEventListener('click', onToggle);
+        if (toggleM) toggleM.addEventListener('click', onToggle);
+    });
+})();
+
+// ── Service Worker — register in prod, unregister in dev ──────────────────
+(function () {
+    if (!('serviceWorker' in navigator)) return;
+    const isDev = window.location.hostname === 'localhost' ||
+                  window.location.hostname === '127.0.0.1';
+    if (isDev) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+        });
+        caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+    } else {
+        navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+    }
+})();
+
+// ── Online / Offline indicator ─────────────────────────────────────────────
+(function () {
+    const el = document.getElementById('offlineIndicator');
+    function update() {
+        if (el) el.classList.toggle('hidden', navigator.onLine);
+    }
+    window.addEventListener('online',  update);
+    window.addEventListener('offline', update);
+    update();
+})();
+</script>
 </body>
 </html>
