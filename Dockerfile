@@ -1,37 +1,61 @@
-# Use official Python runtime
-FROM python:3.11-slim
+# ─────────────────────────────────────────────
+# Stage 1: dependency builder
+# ─────────────────────────────────────────────
+FROM python:3.11-slim AS builder
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV FLASK_ENV=production
+WORKDIR /build
 
-# Create and set working directory
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
+# Install build deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Copy project
+# ─────────────────────────────────────────────
+# Stage 2: runtime image
+# ─────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
+
+LABEL org.opencontainers.image.title="Axon"
+LABEL org.opencontainers.image.description="Personal Memory & Productivity App"
+LABEL org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY"
+
+# Runtime environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_ENV=production \
+    PORT=5000 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+# Install curl for health check only (tiny)
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy application code
 COPY . .
 
-# Create non-root user
-RUN useradd --create-home --shell /bin/bash secondbrain
-RUN chown -R secondbrain:secondbrain /app
-USER secondbrain
+# Create a persistent data directory for SQLite
+RUN mkdir -p /app/data /app/instance
 
-# Expose port
+# Create non-root user and fix permissions
+RUN useradd --no-create-home --shell /bin/false axon \
+    && chown -R axon:axon /app
+
+USER axon
+
 EXPOSE 5000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Health check — uses the /health endpoint in app.py
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Run application
+# Gunicorn as WSGI server — config in gunicorn.conf.py
 CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
