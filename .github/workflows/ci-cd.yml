@@ -1,0 +1,181 @@
+# .github/workflows/ci-cd.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# Axon — CI/CD Pipeline
+#
+# What this does:
+#   1. Lint & test on every push / PR
+#   2. Build Docker image and push to GitHub Container Registry (ghcr.io)
+#   3. (Optional) Deploy — uncomment the deploy job and fill in your server
+#
+# Required secrets (set in repo → Settings → Secrets → Actions):
+#   FLASK_SECRET_KEY   — random string for Flask sessions
+#
+# Optional secrets for deploy:
+#   DEPLOY_HOST        — SSH host of your VPS
+#   DEPLOY_USER        — SSH username
+#   DEPLOY_KEY         — private SSH key (paste full PEM)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI / CD
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:   # allow manual runs from GitHub UI
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}   # e.g. yourname/axon
+
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+# ── 1. LINT & TEST ────────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8
+
+      - name: Lint with flake8
+        run: |
+          # Stop the build on syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Warn on style issues (non-blocking)
+          flake8 . --count --exit-zero --max-complexity=12 --max-line-length=120 --statistics
+
+      - name: Initialise test database
+        env:
+          FLASK_ENV: testing
+          SECRET_KEY: test-secret-key
+        run: |
+          python -c "
+          from app import app, db
+          with app.app_context():
+              db.create_all()
+          print('DB ready')
+          "
+
+      - name: Run tests
+        env:
+          FLASK_ENV: testing
+          SECRET_KEY: test-secret-key
+        run: |
+          # Run pytest if tests/ folder exists, otherwise do a smoke test
+          if [ -d "tests" ]; then
+            pytest tests/ -v --cov=app --cov-report=xml
+          else
+            python -c "
+          from app import app
+          client = app.test_client()
+          r = client.get('/health')
+          assert r.status_code == 200, f'Health check failed: {r.status_code}'
+          r = client.get('/')
+          assert r.status_code == 200, f'Index failed: {r.status_code}'
+          print('✅ Smoke tests passed')
+            "
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          if-no-files-found: ignore
+
+# ── 2. BUILD & PUSH IMAGE ─────────────────────────────────────────────────────
+  build:
+    name: 🐳 Build & Push Image
+    runs-on: ubuntu-latest
+    needs: test
+    # Only push on main/master branch (not on PRs)
+    if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build-push.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata (tags & labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+
+      - name: Build and push image
+        id: build-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+          build-args: |
+            GITHUB_REPOSITORY=${{ github.repository }}
+
+      - name: Image digest
+        run: echo "Pushed ${{ steps.build-push.outputs.digest }}"
+
+# ── 3. DEPLOY (optional — uncomment & configure) ──────────────────────────────
+#
+#  deploy:
+#    name: 🚀 Deploy to VPS
+#    runs-on: ubuntu-latest
+#    needs: build
+#    environment: production
+#
+#    steps:
+#      - name: Deploy via SSH
+#        uses: appleboy/ssh-action@v1.0.3
+#        with:
+#          host:     ${{ secrets.DEPLOY_HOST }}
+#          username: ${{ secrets.DEPLOY_USER }}
+#          key:      ${{ secrets.DEPLOY_KEY }}
+#          script: |
+#            cd ~/axon
+#            echo "${{ secrets.GITHUB_TOKEN }}" | \
+#              docker login ghcr.io -u ${{ github.actor }} --password-stdin
+#            docker pull ghcr.io/${{ github.repository }}:latest
+#            docker compose up -d --no-deps app
+#            docker image prune -f
+#            echo "✅ Deployed $(date)"
