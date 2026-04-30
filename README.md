@@ -1,6 +1,7 @@
 # ⚡ Axon — Personal Memory & Productivity OS
 
 > A full-stack productivity app built with a **DevOps-first mindset** — containerized, CI/CD-automated, offline-capable, and production-ready.
+> ![Second Brain Dashboard](static/screenshots/dashboard.png)
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=flat-square&logo=flask)
@@ -303,8 +304,3 @@ docker logs -f axon
 - [ ] Automated database migrations (Alembic)
 - [ ] End-to-end tests with Playwright
 
----
-
-## 📄 License
-
-MIT — do whatever you want with it.
