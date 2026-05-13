@@ -3,7 +3,7 @@
 > A full-stack productivity app built with a **DevOps-first mindset** — containerized, CI/CD-automated, offline-capable, and production-ready.
 > ![Second Brain Dashboard](static/screenshots/dashboard.png)
 
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white) 
 ![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=flat-square&logo=flask)
 ![Docker](https://img.shields.io/badge/Docker-multi--stage-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?style=flat-square&logo=githubactions&logoColor=white)
